@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rentomatic</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+
+
+</head>
+<body>
+<h4>Rentomatic</h4>
+
+<div class="container">
+    <form class="form-inline">
+        <fieldset>
+
+            <!-- Form Name -->
+            <legend>Preferences</legend>
+            <input class="controlsinput" type="hidden" name="page" id="page" value="0"/>
+            <!-- Text input-->
+            <div class="control-group">
+                <label class="control-label" for="travel">Travel Time</label>
+
+                <div class="controls">
+                    <input  value=45 id="traveltime" name="timetravel" type="text" placeholder="Time to travel by bus"
+                           class="input-small controlsinput" required="">
+
+                </div>
+            </div>
+
+            <!-- Text input-->
+            <div class="control-group">
+                <label class="control-label" for="age">Age</label>
+
+                <div class="controls">
+                    <input id="age" name="age" value=14 type="text" placeholder="days on site" class="input-small controlsinput"
+                           required="">
+
+                </div>
+            </div>
+
+            <!-- Select Basic -->
+            <div class="control-group">
+                <label class="control-label" for="order">Order by</label>
+
+                <div class="controls">
+                    <select id="order" name="order" class="input-medium controlsinput">
+                        <option value="lowest_travel" selected>Travel Time</option>
+                        <option value="price_month">Price</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Button -->
+            <div class="control-group">
+                <label class="control-label" for=""></label>
+
+                <div class="controls">
+                    <button  onclick="app.reload()" id="" name="" class="btn btn-primary">reload</button>
+                </div>
+            </div>
+
+        </fieldset>
+    </form>
+
+
+    <!--<div id="controls">-->
+        <!--<input class="controlsinput" type="hidden" name="page" id="page" value="0"/>-->
+        <!--travel_time(less than):<input class="controlsinput" type="text" name="time" id='traveltime' value="45"/>-->
+        <!--uploaded < than <input class="controlsinput" type="text" name="duration" id="age" value="14"> days ago-->
+        <!--order_by:-->
+        <!--<select id="order" class="controlsinput">-->
+            <!--<option selected value="price_month">price</option>-->
+            <!--<option value="lowest_travel">time</option>-->
+        <!--</select>-->
+
+        <!--<div class="btn btn-default" onclick="reload()">reload</div>-->
+    <!--</div>-->
+    <div>
+        <h4>property to rate</h4>
+
+        <div id="rate">
+            <div class="btn btn-default" onclick="app.rateProb(1)">1</div>
+            <div class="btn btn-default"  onclick="app.rateProb(2)">2</div>
+            <div class="btn btn-default" onclick="app.rateProb(3)">3</div>
+            <div class="btn btn-default" onclick="app.rateProb(4)">4</div>
+            <div class="btn btn-default" onclick="app.rateProb(5)">5</div>
+            <div class="btn btn-warning" onclick="app.rateProb(-1)">NO</div>
+            <span class="">Remaining:<span id="remaining"></span></span>
+            <span> travel <span id="display_time_travel"></span></span>
+        </div>
+        <div id="result">
+            <iframe src="" style="width: 100%" height=800
+                    id="resultiframe"></iframe>
+        </div>
+
+    </div>
+</div>
+
+<script src="/static/js/jquery.min.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/underscore-min.js"></script>
+<script>
+    var app = app || {};
+
+    app.reload = function () {
+    }
+
+    app.update_result = function (prop, count) {
+        app.current_prop_object = prop;
+        $("#resultiframe").attr("src", app.current_prop_object.link);
+        console.log(prop);
+        $("#remaining").html(count);
+        $("#display_time_travel").html(Math.floor(prop.lowest_travel/60));
+    }
+
+    app.rateProb = function (value) {
+        //hide iframe
+        $("#resultiframe").attr("src", "");
+        //call api
+        $.post("/properties/"+app.current_prop_object.id+"/rate/", {"value":value}).done(function(){
+            app.update_results();
+        })
+        .fail(function(){alert("fail")});
+        app.current_prop_object = null;
+    }
+
+    app.update_results = function () {
+        var limit = 4;
+        var skip = parseInt($("#page").val()) * limit;
+        var time = parseInt($("#traveltime").val());
+        var order = $("#order").val();
+        var params = {"limit": limit, "skip": skip, "time": time, "order": order};
+        $.getJSON("/properties", params).done(function (data) {
+//            $("#results").html(app.results_template({"results": data}));
+            app.update_result(data["result"][0], data["count"]);
+        }).fail(function () {
+                    alert("failed results")
+                });
+    };
+
+    $(function () {
+        app.update_results();
+
+    });
+
+
+
+
+</script>
+
+</body>
+</html>

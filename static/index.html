@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Rentomatic</title>
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+
+
+</head>
+<body>
+<h1>Rentomatic</h1>
+
+<div class="container">
+    <div id="controls">
+        page:<input class="controlsinput" type="text" name="page" id="page" value="0"/>
+        travel_time(less than):<input class="controlsinput" type="text" name="time" id='traveltime' value="45"/>
+        no older than <input class="controlsinput" type="text" name="age" value="14" id="age"/> days
+        order_by:
+        <select id="order" class="controlsinput">
+            <option selected value="price_month">price</option>
+            <option value="lowest_travel">time</option>
+        </select>
+    </div>
+    <div>
+        <h3>Results</h3>
+
+        <div id="results">
+            <h4>Loading</h4>
+        </div>
+    </div>
+</div>
+
+<script type="text/template" id="results_template">
+    <table class="table table-hover">
+        <tbody>
+        <% _.each(results, function(result){ %>
+        <tr propid=<%=result.id%> >
+            <td><%=result.id %></td>
+            <td><img src="<%= result.small_picture_link %>"></td>
+            <td><a target="_blank" href="<%= result.link %>">link</a></td>
+            <td><%= result.type %></td>
+            <td><%= result.price_month %></td>
+            <td>
+                <ul>
+                    <% _.each(result.directions_info, function(trip){ %>
+                    <li>t:<% print(Math.floor(trip.total/60))%> - b:<%=trip.bus %> t:<%=trip.tube%> o:<%=trip.other%>
+                    </li>
+                    <% }); %>
+                </ul>
+            </td>
+
+        </tr>
+
+        <% }); %>
+        </tbody>
+    </table>
+</script>
+
+<script src="/static/js/jquery.min.js"></script>
+<!-- Latest compiled and minified JavaScript -->
+<script src="/static/js/bootstrap.min.js"></script>
+<script src="/static/js/underscore-min.js"></script>
+<script>
+    var app = app || {};
+    app.rateProb=function (value, prop_id){
+        //call the api
+        var params = {"value":value, "prop_id":prop_id};
+        $.getJSON("/rate", params).done(function(){
+            app.update_results();
+        }).fail(function(){alert("failed rate")});
+
+    }
+    app.results_template = _.template($("#results_template").html());
+    app.update_results = function () {
+        $("#results").html("<h3>Loading...;)</h3>")
+        var limit = 50;
+        var skip = parseInt($("#page").val()) * limit;
+        var time = parseInt($("#traveltime").val());
+        var order = $("#order").val();
+        var age = $('#age').val();
+        var params = {"limit": limit, "skip": skip, "time": time, "order":order, "age":age};
+        $.getJSON("/properties", params).done(function (data) {
+            $("#results").html(app.results_template({"results": data.result}));
+        }).fail(function () {
+                    alert("failed results")
+                });
+    };
+
+    $(function () {
+        app.update_results();
+        var inputs = $(".controlsinput");
+        _.each(inputs, function (input) {
+            $(input).on("change", function () {
+                app.update_results()
+            });
+        });
+    });
+
+    document.onkeydown = checkKey;
+
+    function checkKey(e) {
+        e = e || window.event;
+        if (e.keyCode == '39') {
+            // left arrow
+            var page = parseInt($("#page").val());
+            $("#page").val(page + 1).trigger("change");
+        }
+        else if (e.keyCode == '37') {
+            var page = parseInt($("#page").val());
+            if (page > 0) {
+                $("#page").val(page - 1).trigger("change");
+            }
+        }
+    }
+
+
+</script>
+
+</body>
+</html>
